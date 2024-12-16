@@ -20,3 +20,15 @@ if [ -n "$EXISTING_CONTAINER" ]; then
 else
   echo "Kafka container (${CONTAINER_NAME}) does not exist or is already stopped."
 fi
+
+# Stop Schema Registry container
+EXISTING_SCHEMA_REGISTRY_CONTAINER=$(docker ps -a --filter "name=${SCHEMA_REGISTRY_CONTAINER_NAME}" --format "{{.ID}}")
+
+if [ -n "$EXISTING_SCHEMA_REGISTRY_CONTAINER" ]; then
+  echo "Stopping Schema Registry container (${SCHEMA_REGISTRY_CONTAINER_NAME})..."
+  docker stop "$SCHEMA_REGISTRY_CONTAINER_NAME"
+else
+  echo "Schema Registry container (${SCHEMA_REGISTRY_CONTAINER_NAME}) does not exist or is already stopped."
+fi
+
+echo "Kafka and Schema Registry have been stopped."

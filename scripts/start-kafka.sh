@@ -33,3 +33,20 @@ else
       -p "${PORT}:${PORT}" \
       "${IMAGE}:${TAG}"
 fi
+
+# Start Schema Registry container
+EXISTING_SCHEMA_REGISTRY_CONTAINER=$(docker ps -a --filter "name=${SCHEMA_REGISTRY_CONTAINER_NAME}" --format "{{.ID}}")
+if [ -n "$EXISTING_SCHEMA_REGISTRY_CONTAINER" ]; then
+  echo "Starting existing Schema Registry container (${SCHEMA_REGISTRY_CONTAINER_NAME})..."
+  docker start "$SCHEMA_REGISTRY_CONTAINER_NAME"
+else
+  echo "Creating and starting a new Schema Registry container (${SCHEMA_REGISTRY_CONTAINER_NAME})..."
+  docker run -d \
+      --name "$SCHEMA_REGISTRY_CONTAINER_NAME" \
+      -p 8081:8081 \
+      -e SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS=PLAINTEXT://localhost:${PORT} \
+      -e SCHEMA_REGISTRY_HOST_NAME=schema-registry \
+      confluentinc/cp-schema-registry:latest
+fi
+
+echo "Kafka and Schema Registry are now running."
