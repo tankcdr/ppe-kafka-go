@@ -1,0 +1,10 @@
+{
+    "eventId": "423e4567-e89b-12d3-a456-426614174003",
+    "eventName": "EmailNotification",
+    "timestamp": "2024-12-16T13:15:00Z",
+    "eventBody": {
+        "recipientEmail": "customer@example.com",
+        "subject": "Your Order Confirmation",
+        "body": "Thank you for your order. Your order number is ORD-20241216-0001."
+    }
+}

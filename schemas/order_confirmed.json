@@ -1,0 +1,53 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "OrderConfirmedEvent",
+    "type": "object",
+    "properties": {
+        "eventId": {
+            "type": "string",
+            "description": "A unique identifier for the event."
+        },
+        "eventName": {
+            "type": "string",
+            "enum": [
+                "OrderConfirmed"
+            ],
+            "description": "The name of the event."
+        },
+        "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The ISO 8601 timestamp when the event occurred."
+        },
+        "eventBody": {
+            "type": "object",
+            "description": "Details about the confirmed order.",
+            "properties": {
+                "orderId": {
+                    "type": "string",
+                    "description": "The unique identifier for the order."
+                },
+                "confirmationTimestamp": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "The timestamp when the order was confirmed."
+                },
+                "isDuplicate": {
+                    "type": "boolean",
+                    "description": "Indicates whether the order was flagged as a duplicate."
+                }
+            },
+            "required": [
+                "orderId",
+                "confirmationTimestamp",
+                "isDuplicate"
+            ]
+        }
+    },
+    "required": [
+        "eventId",
+        "eventName",
+        "timestamp",
+        "eventBody"
+    ]
+}

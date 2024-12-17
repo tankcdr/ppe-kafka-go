@@ -1,0 +1,88 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "OrderReceivedEvent",
+    "type": "object",
+    "properties": {
+        "eventId": {
+            "type": "string",
+            "description": "A unique identifier for the event."
+        },
+        "eventName": {
+            "type": "string",
+            "enum": [
+                "OrderReceived"
+            ],
+            "description": "The name of the event."
+        },
+        "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The ISO 8601 timestamp when the event occurred."
+        },
+        "eventBody": {
+            "type": "object",
+            "description": "The payload of the event containing order details.",
+            "properties": {
+                "orderId": {
+                    "type": "string",
+                    "description": "The unique identifier for the order."
+                },
+                "customerId": {
+                    "type": "string",
+                    "description": "The unique identifier for the customer who placed the order."
+                },
+                "orderDate": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "The date and time when the order was placed."
+                },
+                "items": {
+                    "type": "array",
+                    "description": "A list of items in the order.",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "itemId": {
+                                "type": "string",
+                                "description": "The unique identifier for the item."
+                            },
+                            "quantity": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "description": "The quantity of the item ordered."
+                            },
+                            "price": {
+                                "type": "number",
+                                "minimum": 0,
+                                "description": "The price of the item."
+                            }
+                        },
+                        "required": [
+                            "itemId",
+                            "quantity",
+                            "price"
+                        ]
+                    }
+                },
+                "totalAmount": {
+                    "type": "number",
+                    "minimum": 0,
+                    "description": "The total amount for the order."
+                }
+            },
+            "required": [
+                "orderId",
+                "customerId",
+                "orderDate",
+                "items",
+                "totalAmount"
+            ]
+        }
+    },
+    "required": [
+        "eventId",
+        "eventName",
+        "timestamp",
+        "eventBody"
+    ]
+}

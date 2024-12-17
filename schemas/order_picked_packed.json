@@ -1,0 +1,53 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "OrderPickedPackedEvent",
+    "type": "object",
+    "properties": {
+        "eventId": {
+            "type": "string",
+            "description": "A unique identifier for the event."
+        },
+        "eventName": {
+            "type": "string",
+            "enum": [
+                "OrderPickedPacked"
+            ],
+            "description": "The name of the event."
+        },
+        "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The ISO 8601 timestamp when the event occurred."
+        },
+        "eventBody": {
+            "type": "object",
+            "description": "Details about the picked and packed order.",
+            "properties": {
+                "orderId": {
+                    "type": "string",
+                    "description": "The unique identifier for the order."
+                },
+                "warehouseId": {
+                    "type": "string",
+                    "description": "The unique identifier for the warehouse."
+                },
+                "packedTimestamp": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "The timestamp when the order was packed."
+                }
+            },
+            "required": [
+                "orderId",
+                "warehouseId",
+                "packedTimestamp"
+            ]
+        }
+    },
+    "required": [
+        "eventId",
+        "eventName",
+        "timestamp",
+        "eventBody"
+    ]
+}

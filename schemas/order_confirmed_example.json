@@ -1,0 +1,10 @@
+{
+    "eventId": "223e4567-e89b-12d3-a456-426614174001",
+    "eventName": "OrderConfirmed",
+    "timestamp": "2024-12-16T12:45:00Z",
+    "eventBody": {
+        "orderId": "ORD-20241216-0001",
+        "confirmationTimestamp": "2024-12-16T12:40:00Z",
+        "isDuplicate": false
+    }
+}

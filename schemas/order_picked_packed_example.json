@@ -1,0 +1,10 @@
+{
+    "eventId": "323e4567-e89b-12d3-a456-426614174002",
+    "eventName": "OrderPickedPacked",
+    "timestamp": "2024-12-16T13:00:00Z",
+    "eventBody": {
+        "orderId": "ORD-20241216-0001",
+        "warehouseId": "WH-001",
+        "packedTimestamp": "2024-12-16T12:55:00Z"
+    }
+}

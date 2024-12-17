@@ -1,0 +1,47 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "ErrorEvent",
+    "type": "object",
+    "properties": {
+        "eventId": {
+            "type": "string",
+            "description": "A unique identifier for the event."
+        },
+        "eventName": {
+            "type": "string",
+            "enum": [
+                "ErrorEvent"
+            ],
+            "description": "The name of the event."
+        },
+        "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The ISO 8601 timestamp when the event occurred."
+        },
+        "eventBody": {
+            "type": "object",
+            "description": "Details about the error event.",
+            "properties": {
+                "errorMessage": {
+                    "type": "string",
+                    "description": "The error message describing the failure."
+                },
+                "failedEvent": {
+                    "type": "object",
+                    "description": "The event that could not be processed."
+                }
+            },
+            "required": [
+                "errorMessage",
+                "failedEvent"
+            ]
+        }
+    },
+    "required": [
+        "eventId",
+        "eventName",
+        "timestamp",
+        "eventBody"
+    ]
+}

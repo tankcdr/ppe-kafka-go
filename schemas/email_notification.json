@@ -1,0 +1,53 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "EmailNotificationEvent",
+    "type": "object",
+    "properties": {
+        "eventId": {
+            "type": "string",
+            "description": "A unique identifier for the event."
+        },
+        "eventName": {
+            "type": "string",
+            "enum": [
+                "EmailNotification"
+            ],
+            "description": "The name of the event."
+        },
+        "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The ISO 8601 timestamp when the event occurred."
+        },
+        "eventBody": {
+            "type": "object",
+            "description": "Details about the email notification.",
+            "properties": {
+                "recipientEmail": {
+                    "type": "string",
+                    "format": "email",
+                    "description": "The email address of the recipient."
+                },
+                "subject": {
+                    "type": "string",
+                    "description": "The subject of the email."
+                },
+                "body": {
+                    "type": "string",
+                    "description": "The body content of the email."
+                }
+            },
+            "required": [
+                "recipientEmail",
+                "subject",
+                "body"
+            ]
+        }
+    },
+    "required": [
+        "eventId",
+        "eventName",
+        "timestamp",
+        "eventBody"
+    ]
+}
