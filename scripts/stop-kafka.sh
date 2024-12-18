@@ -11,24 +11,24 @@ else
   exit 1
 fi
 
-# Check if the container exists
-EXISTING_CONTAINER=$(docker ps -a --filter "name=${CONTAINER_NAME}" --format "{{.ID}}")
-
-if [ -n "$EXISTING_CONTAINER" ]; then
-  echo "Stopping Kafka container (${CONTAINER_NAME})..."
-  docker stop "$CONTAINER_NAME"
-else
-  echo "Kafka container (${CONTAINER_NAME}) does not exist or is already stopped."
+# Validate required variables
+if [ -z "$COMPOSE_FILE" ] || [ -z "$PORT" ]; then
+  echo "Required environment variables (COMPOSE_FILE, PORT) are not set in .env"
+  exit 1
 fi
 
-# Stop Schema Registry container
-EXISTING_SCHEMA_REGISTRY_CONTAINER=$(docker ps -a --filter "name=${SCHEMA_REGISTRY_CONTAINER_NAME}" --format "{{.ID}}")
+# Change to the root directory containing docker-compose.yml
+ROOT_DIR=$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..
+cd "$ROOT_DIR" || { echo "Failed to change directory to root"; exit 1; }
 
-if [ -n "$EXISTING_SCHEMA_REGISTRY_CONTAINER" ]; then
-  echo "Stopping Schema Registry container (${SCHEMA_REGISTRY_CONTAINER_NAME})..."
-  docker stop "$SCHEMA_REGISTRY_CONTAINER_NAME"
+# Stop Kafka and Zookeeper using Docker Compose
+echo "Stopping Kafka and Zookeeper using Docker Compose..."
+docker compose -f $COMPOSE_FILE down
+
+# Check if the services are stopoped
+if [ $? -eq 0 ]; then
+  echo "✅ Kafka and Zookeeper have been stopped."
 else
-  echo "Schema Registry container (${SCHEMA_REGISTRY_CONTAINER_NAME}) does not exist or is already stopped."
+  echo "❌ Failed to stop Kafka and Zookeeper."
+  exit 1
 fi
-
-echo "Kafka and Schema Registry have been stopped."

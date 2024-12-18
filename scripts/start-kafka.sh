@@ -12,41 +12,23 @@ else
 fi
 
 # Validate required variables
-if [ -z "$TAG" ] || [ -z "$IMAGE" ] || [ -z "$PORT" ]; then
-  echo "Required environment variables (TAG, IMAGE, PORT) are not set in .env"
+if [ -z "$COMPOSE_FILE" ] || [ -z "$PORT" ]; then
+  echo "Required environment variables (COMPOSE_FILE, PORT) are not set in .env"
   exit 1
 fi
 
-# Check if the container already exists
+# Change to the root directory containing docker-compose.yml
+ROOT_DIR=$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..
+cd "$ROOT_DIR" || { echo "Failed to change directory to root"; exit 1; }
 
-EXISTING_CONTAINER=$(docker ps -a --filter "name=${CONTAINER_NAME}" --format "{{.ID}}")
+# Start Kafka and Zookeeper using Docker Compose
+echo "Starting Kafka and Zookeeper using Docker Compose..."
+docker compose -f $COMPOSE_FILE up -d
 
-if [ -n "$EXISTING_CONTAINER" ]; then
-  # Start the existing container if it's stopped
-  echo "Starting existing Kafka container (${CONTAINER_NAME})..."
-  docker start "$CONTAINER_NAME"
+# Check if the services are running
+if [ $? -eq 0 ]; then
+  echo "✅ Kafka and Zookeeper are now running."
 else
-  # Run a new container and name it
-  echo "Creating and starting a new Kafka container (${CONTAINER_NAME})..."
-  docker run -d \
-      --name "$CONTAINER_NAME" \
-      -p "${PORT}:${PORT}" \
-      "${IMAGE}:${TAG}"
+  echo "❌ Failed to start Kafka and Zookeeper."
+  exit 1
 fi
-
-# Start Schema Registry container
-EXISTING_SCHEMA_REGISTRY_CONTAINER=$(docker ps -a --filter "name=${SCHEMA_REGISTRY_CONTAINER_NAME}" --format "{{.ID}}")
-if [ -n "$EXISTING_SCHEMA_REGISTRY_CONTAINER" ]; then
-  echo "Starting existing Schema Registry container (${SCHEMA_REGISTRY_CONTAINER_NAME})..."
-  docker start "$SCHEMA_REGISTRY_CONTAINER_NAME"
-else
-  echo "Creating and starting a new Schema Registry container (${SCHEMA_REGISTRY_CONTAINER_NAME})..."
-  docker run -d \
-      --name "$SCHEMA_REGISTRY_CONTAINER_NAME" \
-      -p 8081:8081 \
-      -e SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS=PLAINTEXT://localhost:${PORT} \
-      -e SCHEMA_REGISTRY_HOST_NAME=schema-registry \
-      confluentinc/cp-schema-registry:latest
-fi
-
-echo "Kafka and Schema Registry are now running."

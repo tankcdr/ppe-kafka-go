@@ -20,4 +20,4 @@ fi
 TOPIC_NAME=$1
 
 # Consume the latest message
-kafka-console-consumer --bootstrap-server localhost:${PORT} --topic "${TOPIC_NAME}" --timeout-ms 5000 --max-messages 1 --partition 0 --offset earliest
+kafka-console-consumer --bootstrap-server localhost:${PORT} --topic "${TOPIC_NAME}" --timeout-ms 5000 --max-messages 1 --partition 0 --offset 1
