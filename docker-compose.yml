@@ -24,12 +24,12 @@ services:
 
   order-service:
     build:
-      context: ./order # Point to the 'order' directory
-      dockerfile: Dockerfile # Specify the Dockerfile in the 'order' directory
+      context: . # project root
+      dockerfile: order/Dockerfile # Specify the Dockerfile in the 'order' directory
     depends_on:
       - kafka
     ports:
       - 9080:8080 # Map external port 9080 to internal port 8080
     environment:
-      KAFKA_BROKER: kafka:29092 # Internal Kafka communication
-      KAFKA_TOPIC: orders
+      KAFKA_BROKER: kafka:9092 # Internal Kafka communication
+      KAFKA_TOPIC: order-received

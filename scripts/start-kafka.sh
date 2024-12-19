@@ -32,3 +32,5 @@ else
   echo "❌ Failed to start Kafka and Zookeeper."
   exit 1
 fi
+
+$SCRIPT_DIR/setup-env.sh

@@ -1,32 +1,28 @@
 # Build stage
-FROM golang:1.23 as builder
+FROM golang:1.23 AS builder
 
 # Set the working directory
 WORKDIR /app
 
-# Copy the Go modules manifests
-COPY go.mod go.sum ./
-
-# Download dependencies
-RUN go mod download
-
-# Copy the source code
+# Copy the entire project to the build context
 COPY . .
 
+# Set up Go modules
+WORKDIR /app/order
+RUN go mod download
+
 # Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -o service main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o service main.go
 
 # Final stage
 #FROM debian:bullseye-slim
-FROM ubuntu:20.04
-# Set the working directory
+FROM gcr.io/distroless/static-debian11
+
 WORKDIR /app
 
 # Copy the built binary from the builder stage
-COPY --from=builder /app/service .
+COPY --from=builder /app/order/service .
 
-# Expose the application port
 EXPOSE 8080
 
-# Command to run the application
 CMD ["./service"]

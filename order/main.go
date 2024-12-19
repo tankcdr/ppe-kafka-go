@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -86,7 +87,10 @@ func postOrder(deps *AppDependencies) gin.HandlerFunc {
 		ctx := context.Background()
 		producerErr := deps.Producer.Publish(ctx, event)
 		if producerErr != nil {
-			log.Fatalf("Failed to publish message: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": fmt.Sprintf("Failed to marshal order: %v", producerErr),
+			})
+			return
 		}
 		log.Println("Published order event")
 
