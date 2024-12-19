@@ -10,7 +10,7 @@ type OrderItem struct {
 }
 
 // OrderBody represents the body of the OrderReceived event.
-type OrderBody struct {
+type Order struct {
 	OrderID     string      `json:"orderId"`
 	CustomerID  string      `json:"customerId"`
 	OrderDate   time.Time   `json:"orderDate"`
