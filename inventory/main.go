@@ -2,54 +2,133 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/caarlos0/env/v6"
+	"github.com/gin-gonic/gin"
+
 	events "github.com/tankcdr/ppe-kafka-go/events"
 	kafka "github.com/tankcdr/ppe-kafka-go/kafka"
-
-	"github.com/gin-gonic/gin"
 )
 
+// Config holds the environment configuration
+type Config struct {
+	Broker              string `env:"KAFKA_BROKER" envDefault:"localhost:29092"`
+	OrderReceivedTopic  string `env:"KAFKA_ORDER_RECEIVED" envDefault:"order-received"`
+	OrderConfirmedTopic string `env:"KAFKA_ORDER_CONFIRMED" envDefault:"order-confirmed"`
+	ErrorTopic          string `env:"KAFKA_ERROR" envDefault:"error"`
+}
+
+// AppDependencies holds shared dependencies like Kafka producers
+type AppDependencies struct {
+	Producer *kafka.KafkaProducer
+	Config   Config
+}
+
+type KafkaProducers struct {
+	OrderConfirmedProducer *kafka.KafkaProducer
+	ErrorProducer          *kafka.KafkaProducer
+}
+
 // ProcessMessage processes the consumed Kafka message
-func ProcessMessage(key, value []byte) error {
-	log.Printf("Consumed message: Key=%s, Value=%s\n", string(key), string(value))
+func ProcessMessageWrapper(db *SimpleDatabase, producers *KafkaProducers) func(key, value []byte) error {
+	return func(key, value []byte) error {
+		log.Printf("Consumed message: Key=%s, Value=%s\n", string(key), string(value))
 
-	var event *events.Event
-	var order *events.Order
-	var err error
+		var event *events.Event
+		var order *events.Order
+		var err error
+		context := context.Background()
 
-	// Unmarshal the event
-	if event, err = events.NewEventFromBytes(value); err != nil {
-		log.Printf("Failed to unmarshal event: %v\n", err)
-		return err
+		// Unmarshal the event
+		if event, err = events.NewEventFromBytes(value); err != nil {
+			log.Printf("Failed to unmarshal event: %v\n", err)
+			return err
+		}
+
+		// Unmarshal the order
+		if order, err = events.NewOrderFromBytes([]byte(event.EventBody)); err != nil {
+			log.Printf("Failed to unmarshal order: %v\n", err)
+			return err
+		}
+
+		// Enforce order idempotence
+		// idea is that order ids are unique, but they are embedded in the order object
+		// using an in memory store, but would want a real db for this
+		if db.Exists(order.OrderID) {
+			log.Printf("Order %s is a duplicate\n", order.OrderID)
+			errorString := fmt.Sprintf("Order %s is a duplicate", order.OrderID)
+
+			// Publish an Error event to Kafka
+			if err := producers.ErrorProducer.PublishError(context, order, errorString); err != nil {
+				log.Printf("Failed to produce Error event: %v\n", err)
+				return fmt.Errorf("Failed to produce Error event: %v", err)
+			}
+
+			return fmt.Errorf(errorString)
+		}
+		db.Add(order.OrderID)
+		log.Printf("Order %s is unique\n", order.OrderID)
+
+		// Publish a new OrderConfirmed event to Kafka
+		confirmedEvent := events.NewEvent(events.OrderConfirmed, event.EventBody)
+		if err := producers.OrderConfirmedProducer.Publish(context, confirmedEvent); err != nil {
+			errorString := fmt.Sprintf("Failed to produce OrderConfirmed event: %v\n", err)
+			log.Printf(errorString)
+
+			// Publish an Error event to Kafka
+			if err := producers.ErrorProducer.PublishError(context, order, errorString); err != nil {
+				//double death
+				log.Printf("Failed to produce Error event: %v\n", err)
+				return fmt.Errorf("Failed to produce Error event: %v", err)
+			}
+
+			return fmt.Errorf(errorString)
+		}
+		log.Printf("Published OrderConfirmed event: %v\n", confirmedEvent)
+
+		return nil
 	}
-
-	// Unmarshal the order
-	if order, err = events.NewOrderFromBytes([]byte(event.EventBody)); err != nil {
-		log.Printf("Failed to unmarshal order: %v\n", err)
-		return err
-	}
-
-	// Enforce order idempotence
-	// idea is that order ids are unique, but they are embedded in the order object
-
-	return nil
 }
 
 func main() {
+	// Load configuration
+	var cfg Config
+	if err := env.Parse(&cfg); err != nil {
+		log.Fatalf("Failed to load configuration: %v", err)
+	}
+
+	// Create "database" for in-memory idempotence check
+	db := NewSimpleDatabase()
+
+	// Create Kafka producers
+	producers := KafkaProducers{
+		OrderConfirmedProducer: kafka.NewProducer(kafka.KafkaConfig{
+			Brokers: []string{cfg.Broker},
+			Topic:   cfg.OrderConfirmedTopic,
+		}),
+		ErrorProducer: kafka.NewProducer(kafka.KafkaConfig{
+			Brokers: []string{cfg.Broker},
+			Topic:   cfg.ErrorTopic,
+		}),
+	}
+	defer producers.OrderConfirmedProducer.Close()
+	defer producers.ErrorProducer.Close()
+
 	// Define Kafka configuration
-	kafkaConfig := kafka.KafkaConfig{
-		Brokers: []string{"localhost:9092"}, // Replace with your Kafka broker(s)
-		Topic:   "order-received",           // Replace with your topic
-		GroupID: "inventory-group",          // Replace with your consumer group
+	kafkaConfigConsumer := kafka.KafkaConfig{
+		Brokers: []string{cfg.Broker},
+		Topic:   cfg.OrderReceivedTopic,
+		GroupID: "inventory-group",
 	}
 
 	// Create KafkaConsumer instance
-	consumer := kafka.NewConsumer(kafkaConfig)
+	consumer := kafka.NewConsumer(kafkaConfigConsumer)
 	defer consumer.Close()
 
 	// Set up a context with cancellation
@@ -90,7 +169,7 @@ func main() {
 	// Start consuming Kafka messages
 	go func() {
 		log.Println("Starting Kafka consumer...")
-		consumer.Consume(ctx, ProcessMessage)
+		consumer.Consume(ctx, ProcessMessageWrapper(db, &producers))
 	}()
 
 	// Wait for the context to be canceled (e.g., via /shutdown or signal)

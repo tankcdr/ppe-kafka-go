@@ -48,6 +48,17 @@ func (p *KafkaProducer) Publish(ctx context.Context, event *events.Event) error 
 	return nil
 }
 
+func (p *KafkaProducer) PublishError(ctx context.Context, order *events.Order, errorString string) error {
+	errorEvent := events.NewErrorEvent(*order, errorString)
+
+	// Publish the event to Kafka
+	if err := p.Publish(ctx, errorEvent); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Close closes the Kafka producer.
 func (p *KafkaProducer) Close() error {
 	return p.writer.Close()

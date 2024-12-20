@@ -13,11 +13,13 @@ type EventType int
 const (
 	OrderReceived EventType = iota
 	OrderConfirmed
+	Error
 )
 
 var orderStatus = map[EventType]string{
 	OrderReceived:  "OrderReceived",
 	OrderConfirmed: "OrderConfirmed",
+	Error:          "Error",
 }
 
 type Event struct {
@@ -53,6 +55,30 @@ func NewEventFromBytes(value []byte) (*Event, error) {
 		return nil, err
 	}
 	return event, nil
+}
+
+/****************************************************************************************
+ * Error Event implementation
+ * When errors occur, this event will be used to communicate the error
+ ****************************************************************************************/
+type ErrorBody struct {
+	ErrorMessage string `json:"errorMessage"`
+	Order
+}
+
+func NewErrorEvent(order Order, errorMessage string) *Event {
+	errorBody := &ErrorBody{
+		ErrorMessage: errorMessage,
+		Order:        order,
+	}
+
+	errorJSON, err := json.Marshal(errorBody)
+	if err != nil {
+		fmt.Printf("Failed to marshal error: %v\n", err)
+		return nil
+	}
+
+	return NewEvent(Error, string(errorJSON))
 }
 
 /****************************************************************************************
