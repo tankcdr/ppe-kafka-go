@@ -33,3 +33,17 @@ services:
     environment:
       KAFKA_BROKER: kafka:9092 # Internal Kafka communication
       KAFKA_TOPIC: order-received
+
+  inventory-service:
+    build:
+      context: . # project root
+      dockerfile: inventory/Dockerfile # Specify the Dockerfile in the 'order' directory
+    depends_on:
+      - kafka
+    ports:
+      - 9081:8080 # Map external port 9080 to internal port 8080
+    environment:
+      KAFKA_BROKER: kafka:9092 # Internal Kafka communication
+      KAFKA_ORDER_RECEIVED: order-received
+      KAFKA_ORDER_CONFIRMED: order-confirmed
+      KAFKA_ERROR: order-error

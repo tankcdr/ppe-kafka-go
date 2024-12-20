@@ -19,7 +19,8 @@ fi
 
 TOPIC_NAME=$1
 MAX_MESSAGES=${2:-10}
+TIMEOUT=${3:-5000}
 
 # Dump all messages from the beginning
   kafka-console-consumer --bootstrap-server localhost:${PORT} \
-  --topic "${TOPIC_NAME}" --from-beginning --timeout-ms 5000 --max-messages ${MAX_MESSAGES} --partition 0
+  --topic "${TOPIC_NAME}" --from-beginning --timeout-ms ${TIMEOUT} --max-messages ${MAX_MESSAGES} --partition 0

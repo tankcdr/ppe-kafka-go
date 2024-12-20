@@ -12,7 +12,7 @@ WORKDIR /app/inventory
 RUN go mod download
 
 # Build the application
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o service main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o service main.go db.go
 
 # Final stage
 FROM gcr.io/distroless/static-debian11
