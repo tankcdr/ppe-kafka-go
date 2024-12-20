@@ -19,10 +19,10 @@ import (
 
 // Config holds the environment configuration
 type Config struct {
-	Broker              string `env:"KAFKA_BROKER" envDefault:"localhost:29092"`
-	OrderReceivedTopic  string `env:"KAFKA_ORDER_RECEIVED" envDefault:"order-received"`
-	OrderConfirmedTopic string `env:"KAFKA_ORDER_CONFIRMED" envDefault:"order-confirmed"`
-	ErrorTopic          string `env:"KAFKA_ERROR" envDefault:"error"`
+	Broker                 string `env:"KAFKA_BROKER" envDefault:"localhost:29092"`
+	OrderConfirmedTopic    string `env:"KAFKA_ORDER_CONFIRMED" envDefault:"order-confirmed"`
+	OrderNotificationTopic string `env:"KAFKA_ORDER_NOTFIFICATION" envDefault:"order-notification"`
+	ErrorTopic             string `env:"KAFKA_ERROR" envDefault:"order-error"`
 }
 
 // AppDependencies holds shared dependencies like Kafka producers
@@ -32,8 +32,8 @@ type AppDependencies struct {
 }
 
 type KafkaProducers struct {
-	OrderConfirmedProducer *kafka.KafkaProducer
-	ErrorProducer          *kafka.KafkaProducer
+	NotificationProducer *kafka.KafkaProducer
+	ErrorProducer        *kafka.KafkaProducer
 }
 
 // ProcessMessage processes the consumed Kafka message
@@ -42,7 +42,7 @@ func ProcessMessageWrapper(db *db.SimpleDatabase, producers *KafkaProducers) fun
 		log.Printf("Consumed message: Key=%s, Value=%s\n", string(key), string(value))
 
 		var event *events.Event
-		var order *events.Order
+		var notification *events.Notification
 		var err error
 		context := context.Background()
 
@@ -51,20 +51,29 @@ func ProcessMessageWrapper(db *db.SimpleDatabase, producers *KafkaProducers) fun
 			log.Printf("Failed to unmarshal event: %v\n", err)
 			return err
 		}
+		// Check if the event is an Notification event
+		if event.EventName != events.OrderStatus[events.OrderConfirmed] {
+			log.Printf("Not of type Notification. Instead event type is %s.\n", event.EventName)
+			return nil
+		}
 
-		// Unmarshal the order
-		if order, err = events.NewOrderFromBytes([]byte(event.EventBody)); err != nil {
-			log.Printf("Failed to unmarshal order: %v\n", err)
+		// Unmarshal the Notification
+		if notification, err = events.NewNotificationFromBytes([]byte(event.EventBody)); err != nil {
+			log.Printf("Failed to unmarshal notification: %v\n", err)
 			return err
 		}
+
+		// create a unqiue key for the notification using order id and type
+		uniqueKey := events.NotificationStatus[events.NotificationType(notification.Type)] + ":" + notification.OrderID
 
 		// Enforce order idempotence
 		// idea is that order ids are unique, but they are embedded in the order object
 		// using an in memory store, but would want a real db for this
-		if db.Exists(order.OrderID) {
-			log.Printf("Order %s is a duplicate\n", order.OrderID)
-			errorString := fmt.Sprintf("Order %s is a duplicate", order.OrderID)
+		if db.Exists(uniqueKey) {
+			log.Printf("Notification %s is a duplicate\n", uniqueKey)
+			errorString := fmt.Sprintf("Notification %s is a duplicate", uniqueKey)
 			event.ErrorMessage = &errorString
+
 			// Publish an Error event to Kafka
 			if err := producers.ErrorProducer.Publish(context, event); err != nil {
 				log.Printf("Failed to produce Error event: %v\n", err)
@@ -73,26 +82,10 @@ func ProcessMessageWrapper(db *db.SimpleDatabase, producers *KafkaProducers) fun
 
 			return fmt.Errorf(errorString)
 		}
-		db.Add(order.OrderID)
-		log.Printf("Order %s is unique\n", order.OrderID)
+		db.Add(uniqueKey)
+		log.Printf("Notification %s is unique\n", uniqueKey)
 
-		// Publish a new OrderConfirmed event to Kafka
-		confirmedEvent := events.NewEvent(events.OrderConfirmed, event.EventBody)
-		if err := producers.OrderConfirmedProducer.Publish(context, confirmedEvent); err != nil {
-			errorString := fmt.Sprintf("Failed to produce OrderConfirmed event: %v\n", err)
-			event.ErrorMessage = &errorString
-			log.Printf(errorString)
-
-			// Publish an Error event to Kafka
-			if err := producers.ErrorProducer.Publish(context, event); err != nil {
-				//double death
-				log.Printf("Failed to produce Error event: %v\n", err)
-				return fmt.Errorf("Failed to produce Error event: %v", err)
-			}
-
-			return fmt.Errorf(errorString)
-		}
-		log.Printf("Published OrderConfirmed event: %v\n", confirmedEvent)
+		log.Printf("Sucessfully processed notification event: %v\n", notification)
 
 		return nil
 	}
@@ -110,23 +103,23 @@ func main() {
 
 	// Create Kafka producers
 	producers := KafkaProducers{
-		OrderConfirmedProducer: kafka.NewProducer(kafka.KafkaConfig{
+		NotificationProducer: kafka.NewProducer(kafka.KafkaConfig{
 			Brokers: []string{cfg.Broker},
-			Topic:   cfg.OrderConfirmedTopic,
+			Topic:   cfg.OrderNotificationTopic,
 		}),
 		ErrorProducer: kafka.NewProducer(kafka.KafkaConfig{
 			Brokers: []string{cfg.Broker},
 			Topic:   cfg.ErrorTopic,
 		}),
 	}
-	defer producers.OrderConfirmedProducer.Close()
+	defer producers.NotificationProducer.Close()
 	defer producers.ErrorProducer.Close()
 
 	// Define Kafka configuration
 	kafkaConfigConsumer := kafka.KafkaConfig{
 		Brokers: []string{cfg.Broker},
-		Topic:   cfg.OrderReceivedTopic,
-		GroupID: "inventory-group",
+		Topic:   cfg.OrderConfirmedTopic,
+		GroupID: "notification-group",
 	}
 
 	// Create KafkaConsumer instance

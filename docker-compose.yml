@@ -25,7 +25,7 @@ services:
   order-service:
     build:
       context: . # project root
-      dockerfile: order/Dockerfile # Specify the Dockerfile in the 'order' directory
+      dockerfile: order/Dockerfile
     depends_on:
       - kafka
     ports:
@@ -37,7 +37,7 @@ services:
   inventory-service:
     build:
       context: . # project root
-      dockerfile: inventory/Dockerfile # Specify the Dockerfile in the 'order' directory
+      dockerfile: inventory/Dockerfile
     depends_on:
       - kafka
     ports:
@@ -46,4 +46,18 @@ services:
       KAFKA_BROKER: kafka:9092 # Internal Kafka communication
       KAFKA_ORDER_RECEIVED: order-received
       KAFKA_ORDER_CONFIRMED: order-confirmed
+      KAFKA_ERROR: order-error
+
+  notification-service:
+    build:
+      context: . # project root
+      dockerfile: notification/Dockerfile
+    depends_on:
+      - kafka
+    ports:
+      - 9082:8080 # Map external port 9080 to internal port 8080
+    environment:
+      KAFKA_BROKER: kafka:9092 # Internal Kafka communication
+      KAFKA_ORDER_CONFIRMED: order-confirmed
+      KAFKA_ORDER_NOTIFICATION: order-notification
       KAFKA_ERROR: order-error

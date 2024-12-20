@@ -13,20 +13,23 @@ type EventType int
 const (
 	OrderReceived EventType = iota
 	OrderConfirmed
+	Notificatifcation
 	Error
 )
 
-var orderStatus = map[EventType]string{
-	OrderReceived:  "OrderReceived",
-	OrderConfirmed: "OrderConfirmed",
-	Error:          "Error",
+var OrderStatus = map[EventType]string{
+	OrderReceived:     "OrderReceived",
+	OrderConfirmed:    "OrderConfirmed",
+	Notificatifcation: "Notificatifcation",
+	Error:             "Error",
 }
 
 type Event struct {
-	EventId   string `json:"eventId"`
-	EventName string `json:"eventName"`
-	Timestamp string `json:"timestamp"`
-	EventBody string `json:"eventBody"`
+	EventId      string  `json:"eventId"`
+	EventName    string  `json:"eventName"`
+	Timestamp    string  `json:"timestamp"`
+	EventBody    string  `json:"eventBody"`
+	ErrorMessage *string `json:"optionalData,omitempty"`
 }
 
 func NewEvent(eventType EventType, eventBody string) *Event {
@@ -43,7 +46,7 @@ func NewEvent(eventType EventType, eventBody string) *Event {
 
 	return &Event{
 		EventId:   u.String(),
-		EventName: orderStatus[eventType],
+		EventName: OrderStatus[eventType],
 		Timestamp: timestamp,
 		EventBody: eventBody,
 	}
@@ -55,30 +58,6 @@ func NewEventFromBytes(value []byte) (*Event, error) {
 		return nil, err
 	}
 	return event, nil
-}
-
-/****************************************************************************************
- * Error Event implementation
- * When errors occur, this event will be used to communicate the error
- ****************************************************************************************/
-type ErrorBody struct {
-	ErrorMessage string `json:"errorMessage"`
-	Order
-}
-
-func NewErrorEvent(order Order, errorMessage string) *Event {
-	errorBody := &ErrorBody{
-		ErrorMessage: errorMessage,
-		Order:        order,
-	}
-
-	errorJSON, err := json.Marshal(errorBody)
-	if err != nil {
-		fmt.Printf("Failed to marshal error: %v\n", err)
-		return nil
-	}
-
-	return NewEvent(Error, string(errorJSON))
 }
 
 /****************************************************************************************
@@ -107,4 +86,36 @@ func NewOrderFromBytes(value []byte) (*Order, error) {
 		return nil, err
 	}
 	return order, nil
+}
+
+/****************************************************************************************
+ * Notification implementation
+ * Used when sending notifications to customers
+ ****************************************************************************************/
+
+type NotificationType int
+
+const (
+	OrderFulfilled NotificationType = iota
+	OrderShipped
+)
+
+var NotificationStatus = map[NotificationType]string{
+	OrderFulfilled: "OrderFulfilled",
+	OrderShipped:   "OrderShipped",
+}
+
+type Notification struct {
+	Type int `json:"type"`
+	Order
+}
+
+func NewNotificationFromBytes(value []byte) (*Notification, error) {
+	notification := &Notification{}
+	{
+	}
+	if err := json.Unmarshal(value, notification); err != nil {
+		return nil, err
+	}
+	return notification, nil
 }

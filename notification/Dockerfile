@@ -8,19 +8,20 @@ WORKDIR /app
 COPY . .
 
 # Set up Go modules
-WORKDIR /app/inventory
+WORKDIR /app/notification
 RUN go mod download
 
 # Build the application
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o service main.go
 
 # Final stage
+#FROM debian:bullseye-slim
 FROM gcr.io/distroless/static-debian11
 
 WORKDIR /app
 
 # Copy the built binary from the builder stage
-COPY --from=builder /app/inventory/service .
+COPY --from=builder /app/notification/service .
 
 EXPOSE 8080
 
