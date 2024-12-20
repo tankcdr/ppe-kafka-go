@@ -6,8 +6,7 @@ import (
 	"log"
 
 	"github.com/segmentio/kafka-go"
-
-	"github.com/tankcdr/ppe-kafka-go/common"
+	"github.com/tankcdr/ppe-kafka-go/events"
 )
 
 type KafkaProducer struct {
@@ -25,7 +24,7 @@ func NewProducer(config KafkaConfig) *KafkaProducer {
 }
 
 // Publish sends a message to the Kafka topic.
-func (p *KafkaProducer) Publish(ctx context.Context, event *common.Event) error {
+func (p *KafkaProducer) Publish(ctx context.Context, event *events.Event) error {
 	// Serialize the event to JSON
 	eventJSON, err := json.Marshal(event)
 	if err != nil {

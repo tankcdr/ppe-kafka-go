@@ -9,9 +9,8 @@ import (
 
 	"github.com/caarlos0/env/v6"
 	"github.com/gin-gonic/gin"
-	"github.com/tankcdr/ppe-kafka-go/common"
-	kafka "github.com/tankcdr/ppe-kafka-go/common/kafka"
-	order "github.com/tankcdr/ppe-kafka-go/order/pkg"
+	events "github.com/tankcdr/ppe-kafka-go/events"
+	kafka "github.com/tankcdr/ppe-kafka-go/kafka"
 )
 
 // Config holds the environment configuration
@@ -67,7 +66,7 @@ func setupRouter(deps *AppDependencies) *gin.Engine {
 func postOrder(deps *AppDependencies) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// validating the JSON payload
-		var order order.Order
+		var order events.Order
 		// Get the order from the JSON body
 		// Bind the JSON to the general Event struct
 		if err := c.ShouldBindJSON(&order); err != nil {
@@ -81,7 +80,7 @@ func postOrder(deps *AppDependencies) gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal order"})
 			return
 		}
-		event := common.NewEvent("OrderReceived", string(orderJSON))
+		event := events.NewEvent(events.OrderReceived, string(orderJSON))
 
 		// Publish an event
 		ctx := context.Background()
