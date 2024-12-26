@@ -112,7 +112,7 @@ func main() {
 	// Define Kafka configuration
 	kafkaConfigConsumer := kafka.KafkaConfig{
 		Brokers: []string{cfg.Broker},
-		Topic:   cfg.OrderConfirmedTopic,
+		Topic:   cfg.OrderNotificationTopic,
 		GroupID: "notification-group",
 	}
 
