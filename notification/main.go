@@ -21,7 +21,6 @@ import (
 // Config holds the environment configuration
 type Config struct {
 	Broker                 string `env:"KAFKA_BROKER" envDefault:"localhost:29092"`
-	OrderConfirmedTopic    string `env:"KAFKA_ORDER_CONFIRMED" envDefault:"order-confirmed"`
 	OrderNotificationTopic string `env:"KAFKA_ORDER_NOTFIFICATION" envDefault:"order-notification"`
 	ErrorTopic             string `env:"KAFKA_ERROR" envDefault:"order-error"`
 }

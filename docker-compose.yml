@@ -1,3 +1,8 @@
+x-global:
+  environment:
+    KAFKA_BROKER: kafka:9092 
+    KAFKA_ERROR: order-error
+
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
@@ -31,7 +36,7 @@ services:
     ports:
       - 9080:8080 # Map external port 9080 to internal port 8080
     environment:
-      KAFKA_BROKER: kafka:9092 # Internal Kafka communication
+      # Internal Kafka communication
       KAFKA_TOPIC: order-received
 
   inventory-service:
@@ -43,10 +48,20 @@ services:
     ports:
       - 9081:8080 # Map external port 9080 to internal port 8080
     environment:
-      KAFKA_BROKER: kafka:9092 # Internal Kafka communication
       KAFKA_ORDER_RECEIVED: order-received
       KAFKA_ORDER_CONFIRMED: order-confirmed
-      KAFKA_ERROR: order-error
+     
+   warehouse-service:
+    build:
+      context: . # project root
+      dockerfile: warehouse/Dockerfile
+    depends_on:
+      - kafka
+    ports:
+      - 9082:8080 # Map external port 9080 to internal port 8080
+    environment:
+      KAFKA_ORDER_CONFIRMED: order-confirmed
+      KAFKA_ORDER_NOTIFICATION: order-notification
 
   notification-service:
     build:
@@ -55,9 +70,6 @@ services:
     depends_on:
       - kafka
     ports:
-      - 9082:8080 # Map external port 9080 to internal port 8080
+      - 9083:8080 # Map external port 9080 to internal port 8080
     environment:
-      KAFKA_BROKER: kafka:9092 # Internal Kafka communication
-      KAFKA_ORDER_CONFIRMED: order-confirmed
       KAFKA_ORDER_NOTIFICATION: order-notification
-      KAFKA_ERROR: order-error
