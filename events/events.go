@@ -29,7 +29,7 @@ type Event struct {
 	EventName    string  `json:"eventName"`
 	Timestamp    string  `json:"timestamp"`
 	EventBody    string  `json:"eventBody"`
-	ErrorMessage *string `json:"optionalData,omitempty"`
+	ErrorMessage *string `json:"errorMessage,omitempty"`
 }
 
 func NewEvent(eventType EventType, eventBody string) *Event {
