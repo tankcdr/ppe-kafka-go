@@ -5,7 +5,6 @@ go 1.23.2
 require (
 	github.com/caarlos0/env/v6 v6.10.1
 	github.com/gin-gonic/gin v1.10.0
-
 	github.com/tankcdr/ppe-kafka-go/events v0.0.0
 	github.com/tankcdr/ppe-kafka-go/kafka v0.0.0
 )
@@ -35,7 +34,6 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
-	github.com/tankcdr/ppe-kafka-go/events v0.0.0
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.12 // indirect
 	golang.org/x/arch v0.12.0 // indirect

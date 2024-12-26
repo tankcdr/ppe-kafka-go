@@ -88,6 +88,16 @@ func NewOrderFromBytes(value []byte) (*Order, error) {
 	return order, nil
 }
 
+func (o *Order) ToEvent(eventType EventType) (*Event, error) {
+	var oJSON []byte
+	var err error
+	if oJSON, err = json.Marshal(o); err != nil {
+		return nil, err
+	}
+
+	return NewEvent(eventType, string(oJSON)), nil
+}
+
 /****************************************************************************************
  * Notification implementation
  * Used when sending notifications to customers
@@ -106,8 +116,15 @@ var NotificationStatus = map[NotificationType]string{
 }
 
 type Notification struct {
-	Type int `json:"type"`
+	Type int `json:"notificationType"`
 	Order
+}
+
+func NewNotification(notificationType NotificationType, order *Order) *Notification {
+	return &Notification{
+		Type:  int(notificationType),
+		Order: *order,
+	}
 }
 
 func NewNotificationFromBytes(value []byte) (*Notification, error) {
@@ -118,4 +135,14 @@ func NewNotificationFromBytes(value []byte) (*Notification, error) {
 		return nil, err
 	}
 	return notification, nil
+}
+
+func (n *Notification) ToEvent() (*Event, error) {
+	var nJSON []byte
+	var err error
+	if nJSON, err = json.Marshal(n); err != nil {
+		return nil, err
+	}
+
+	return NewEvent(Notificatifcation, string(nJSON)), nil
 }

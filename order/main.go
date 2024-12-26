@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -75,16 +74,18 @@ func postOrder(deps *AppDependencies) gin.HandlerFunc {
 		}
 
 		// Create an Event struct
-		orderJSON, err := json.Marshal(order)
+		orderReceivedEvent, err := order.ToEvent(events.OrderReceived)
+
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal order"})
+			errorMessage := fmt.Sprintf("Failed to create OrderReceivedEvent: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": errorMessage})
 			return
 		}
-		event := events.NewEvent(events.OrderReceived, string(orderJSON))
 
-		// Publish an event
+		// Publish the OrderReceived Event to Kafka
 		ctx := context.Background()
-		producerErr := deps.Producer.Publish(ctx, event)
+		producerErr := deps.Producer.Publish(ctx, orderReceivedEvent)
+
 		if producerErr != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": fmt.Sprintf("Failed to marshal order: %v", producerErr),
@@ -93,6 +94,6 @@ func postOrder(deps *AppDependencies) gin.HandlerFunc {
 		}
 		log.Println("Published order event")
 
-		c.JSON(http.StatusOK, gin.H{"status": "Order received", "eventId": event.EventId, "order": order})
+		c.JSON(http.StatusOK, gin.H{"status": "Order received", "eventId": orderReceivedEvent.EventId, "order": order})
 	}
 }
