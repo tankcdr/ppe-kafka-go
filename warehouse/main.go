@@ -76,7 +76,7 @@ func ProcessMessageWrapper(db *db.SimpleDatabase, producers *KafkaProducers) fun
 		// using an in memory store, but would want a real db for this
 		if db.Exists(uniqueKey) {
 			logString := fmt.Sprintf("Notification %s is a duplicate", uniqueKey)
-			return errors.HandleError(context, event, producers.ErrorProducer, err, logString)
+			return errors.HandleError(context, event, producers.ErrorProducer, logString)
 		}
 		db.Add(uniqueKey)
 		log.Printf("Notification %s is unique\n", uniqueKey)
@@ -86,7 +86,7 @@ func ProcessMessageWrapper(db *db.SimpleDatabase, producers *KafkaProducers) fun
 		notificationEvent, err := notification.ToEvent()
 
 		if err != nil {
-			return errors.HandleError(context, event, producers.ErrorProducer, err, "Failed to create Notification event")
+			return errors.HandleError(context, event, producers.ErrorProducer, "Failed to create Notification event")
 
 		}
 

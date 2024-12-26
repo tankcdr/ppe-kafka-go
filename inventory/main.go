@@ -13,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	db "github.com/tankcdr/ppe-kafka-go/db"
+	errors "github.com/tankcdr/ppe-kafka-go/error"
 	events "github.com/tankcdr/ppe-kafka-go/events"
 	kafka "github.com/tankcdr/ppe-kafka-go/kafka"
 )
@@ -62,16 +63,8 @@ func ProcessMessageWrapper(db *db.SimpleDatabase, producers *KafkaProducers) fun
 		// idea is that order ids are unique, but they are embedded in the order object
 		// using an in memory store, but would want a real db for this
 		if db.Exists(order.OrderID) {
-			log.Printf("Order %s is a duplicate\n", order.OrderID)
 			errorString := fmt.Sprintf("Order %s is a duplicate", order.OrderID)
-			event.ErrorMessage = &errorString
-			// Publish an Error event to Kafka
-			if err := producers.ErrorProducer.Publish(context, event); err != nil {
-				log.Printf("Failed to produce Error event: %v\n", err)
-				return fmt.Errorf("Failed to produce Error event: %v", err)
-			}
-
-			return fmt.Errorf(errorString)
+			return errors.HandleError(context, event, errorString)
 		}
 		db.Add(order.OrderID)
 		log.Printf("Order %s is unique\n", order.OrderID)
@@ -80,17 +73,7 @@ func ProcessMessageWrapper(db *db.SimpleDatabase, producers *KafkaProducers) fun
 		confirmedEvent := events.NewEvent(events.OrderConfirmed, event.EventBody)
 		if err := producers.OrderConfirmedProducer.Publish(context, confirmedEvent); err != nil {
 			errorString := fmt.Sprintf("Failed to produce OrderConfirmed event: %v\n", err)
-			event.ErrorMessage = &errorString
-			log.Printf(errorString)
-
-			// Publish an Error event to Kafka
-			if err := producers.ErrorProducer.Publish(context, event); err != nil {
-				//double death
-				log.Printf("Failed to produce Error event: %v\n", err)
-				return fmt.Errorf("Failed to produce Error event: %v", err)
-			}
-
-			return fmt.Errorf(errorString)
+			return errors.HandleError(context, event, errorString)
 		}
 		log.Printf("Published OrderConfirmed event: %v\n", confirmedEvent)
 

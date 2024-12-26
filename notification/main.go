@@ -13,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	db "github.com/tankcdr/ppe-kafka-go/db"
+	errors "github.com/tankcdr/ppe-kafka-go/error"
 	events "github.com/tankcdr/ppe-kafka-go/events"
 	kafka "github.com/tankcdr/ppe-kafka-go/kafka"
 )
@@ -72,15 +73,8 @@ func ProcessMessageWrapper(db *db.SimpleDatabase, producers *KafkaProducers) fun
 		if db.Exists(uniqueKey) {
 			log.Printf("Notification %s is a duplicate\n", uniqueKey)
 			errorString := fmt.Sprintf("Notification %s is a duplicate", uniqueKey)
-			event.ErrorMessage = &errorString
+			return errors.HandleError(context, producers.ErrorProducer, errorString)
 
-			// Publish an Error event to Kafka
-			if err := producers.ErrorProducer.Publish(context, event); err != nil {
-				log.Printf("Failed to produce Error event: %v\n", err)
-				return fmt.Errorf("Failed to produce Error event: %v", err)
-			}
-
-			return fmt.Errorf(errorString)
 		}
 		db.Add(uniqueKey)
 		log.Printf("Notification %s is unique\n", uniqueKey)

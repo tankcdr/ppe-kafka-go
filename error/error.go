@@ -10,9 +10,11 @@ import (
 )
 
 // HandleError processes an error by logging it, updating the event, publishing the error to Kafka, and returning the formatted error.
-func HandleError(ctx context.Context, event *events.Event, producer *kafka.KafkaProducer, err error, customMessage string) error {
+func HandleError(ctx context.Context, event *events.Event, producer *kafka.KafkaProducer, customMessage string) error {
 	// Log the error
-	log.Printf("%s: %v\n", customMessage, err)
+	log.Printf("%s\n", customMessage)
+
+	err := fmt.Errorf(customMessage)
 
 	// Update the event with the error message
 	errorString := fmt.Sprintf("%s: %v", customMessage, err)
