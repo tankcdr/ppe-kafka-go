@@ -1,6 +1,6 @@
 x-global:
   environment:
-    KAFKA_BROKER: kafka:9092 
+    KAFKA_BROKER: kafka:9092
     KAFKA_ERROR: order-error
 
 services:
@@ -50,15 +50,29 @@ services:
     environment:
       KAFKA_ORDER_RECEIVED: order-received
       KAFKA_ORDER_CONFIRMED: order-confirmed
-     
-   warehouse-service:
+
+  shipper-service:
+    build:
+      context: . # project root
+      dockerfile: shipper/Dockerfile
+    depends_on:
+      - kafka
+    ports:
+      - 9082:8080 # Map external port 9080 to internal port 8080
+    environment:
+      # Internal Kafka communication
+      KAFKA_TOPIC: order-received
+      KAFKA_ORDER_PICKEDPACKED: order-picked-packed
+      KAFKA_ORDER_NOTIFICATION: order-notification
+
+  warehouse-service:
     build:
       context: . # project root
       dockerfile: warehouse/Dockerfile
     depends_on:
       - kafka
     ports:
-      - 9082:8080 # Map external port 9080 to internal port 8080
+      - 9083:8080 # Map external port 9080 to internal port 8080
     environment:
       KAFKA_ORDER_CONFIRMED: order-confirmed
       KAFKA_ORDER_NOTIFICATION: order-notification
@@ -70,6 +84,6 @@ services:
     depends_on:
       - kafka
     ports:
-      - 9083:8080 # Map external port 9080 to internal port 8080
+      - 9084:8080 # Map external port 9080 to internal port 8080
     environment:
       KAFKA_ORDER_NOTIFICATION: order-notification

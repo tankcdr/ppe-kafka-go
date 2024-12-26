@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/caarlos0/env/v6"
 	"github.com/gin-gonic/gin"
@@ -23,11 +22,9 @@ import (
 type Config struct {
 	Broker string `env:"KAFKA_BROKER" envDefault:"localhost:29092"`
 	//consuming from order-confirmed topic
-	OrderConfirmedTopic string `env:"KAFKA_ORDER_CONFIRMED" envDefault:"order-confirmed"`
+	OrderPickedPacked string `env:"KAFKA_ORDER_PICKEDPACKED" envDefault:"order-picked-packed"`
 	//producing to order-notification topic
 	OrderNotificationTopic string `env:"KAFKA_ORDER_NOTFIFICATION" envDefault:"order-notification"`
-	//producing to order-picked-packed topic
-	OrderPickedPackedTopic string `env:"KAFKA_ORDER_PICKED_PACKED" envDefault:"order-picked-packed"`
 	//producing to order-error topic on error
 	ErrorTopic string `env:"KAFKA_ERROR" envDefault:"order-error"`
 }
@@ -40,7 +37,6 @@ type AppDependencies struct {
 
 type KafkaProducers struct {
 	NotificationProducer *kafka.KafkaProducer
-	OrderPickedPacked    *kafka.KafkaProducer
 	ErrorProducer        *kafka.KafkaProducer
 }
 
@@ -61,12 +57,12 @@ func ProcessMessageWrapper(db *db.SimpleDatabase, producers *KafkaProducers) fun
 		}
 		// Check if the event is an OrderConfirmed event
 		// Inventory service publishes the OrderConfirmed event
-		if event.EventName != events.OrderStatus[events.OrderConfirmed] {
-			log.Printf("Not of type %s. Instead event type is %s.\n", events.OrderStatus[events.OrderConfirmed], event.EventName)
+		if event.EventName != events.OrderStatus[events.OrderPickedPacked] {
+			log.Printf("Not of type %s. Instead event type is %s.\n", events.OrderStatus[events.OrderPickedPacked], event.EventName)
 			return nil
 		}
 
-		// Unmarshal the Notification
+		// Unmarshal the Order
 		if order, err = events.NewOrderFromBytes([]byte(event.EventBody)); err != nil {
 			log.Printf("Failed to unmarshal order: %v\n", err)
 			return err
@@ -76,8 +72,6 @@ func ProcessMessageWrapper(db *db.SimpleDatabase, producers *KafkaProducers) fun
 		uniqueKey := order.OrderID
 
 		// Enforce order idempotence
-		// idea is that order ids are unique, but they are embedded in the order object
-		// using an in memory store, but would want a real db for this
 		if db.Exists(uniqueKey) {
 			logString := fmt.Sprintf("Notification %s is a duplicate", uniqueKey)
 			return errors.HandleError(context, event, producers.ErrorProducer, logString)
@@ -86,7 +80,7 @@ func ProcessMessageWrapper(db *db.SimpleDatabase, producers *KafkaProducers) fun
 		log.Printf("Notification %s is unique\n", uniqueKey)
 
 		// Create a Notification event
-		notification := events.NewNotification(events.OrderFulfilled, order)
+		notification := events.NewNotification(events.OrderShipped, order)
 		notificationEvent, err := notification.ToEvent()
 
 		if err != nil {
@@ -96,17 +90,6 @@ func ProcessMessageWrapper(db *db.SimpleDatabase, producers *KafkaProducers) fun
 
 		// Publish the Notification event to Kafka
 		if err := producers.NotificationProducer.Publish(context, notificationEvent); err != nil {
-			log.Printf("Failed to produce Notification event: %v\n", err)
-			return fmt.Errorf("Failed to produce Notification event: %v", err)
-		}
-
-		// Simulate the OrderPickedPacked event
-		time.Sleep(8 * time.Second)
-
-		// Publish the OrderPickedPacked event to Kafka
-		pickedPackedEvent := events.NewEvent(events.OrderPickedPacked, event.EventBody)
-
-		if err := producers.OrderPickedPacked.Publish(context, pickedPackedEvent); err != nil {
 			log.Printf("Failed to produce Notification event: %v\n", err)
 			return fmt.Errorf("Failed to produce Notification event: %v", err)
 		}
@@ -135,10 +118,6 @@ func main() {
 			Brokers: []string{cfg.Broker},
 			Topic:   cfg.ErrorTopic,
 		}),
-		OrderPickedPacked: kafka.NewProducer(kafka.KafkaConfig{
-			Brokers: []string{cfg.Broker},
-			Topic:   cfg.OrderPickedPackedTopic,
-		}),
 	}
 	defer producers.NotificationProducer.Close()
 	defer producers.ErrorProducer.Close()
@@ -146,8 +125,8 @@ func main() {
 	// Define Kafka configuration
 	kafkaConfigConsumer := kafka.KafkaConfig{
 		Brokers: []string{cfg.Broker},
-		Topic:   cfg.OrderConfirmedTopic,
-		GroupID: "warehouse-group",
+		Topic:   cfg.OrderPickedPacked,
+		GroupID: "shipper-group",
 	}
 
 	// Create KafkaConsumer instance

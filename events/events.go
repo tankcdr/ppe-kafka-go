@@ -13,6 +13,7 @@ type EventType int
 const (
 	OrderReceived EventType = iota
 	OrderConfirmed
+	OrderPickedPacked
 	Notificatifcation
 	Error
 )
@@ -20,6 +21,7 @@ const (
 var OrderStatus = map[EventType]string{
 	OrderReceived:     "OrderReceived",
 	OrderConfirmed:    "OrderConfirmed",
+	OrderPickedPacked: "OrderPickedPacked",
 	Notificatifcation: "Notificatifcation",
 	Error:             "Error",
 }
