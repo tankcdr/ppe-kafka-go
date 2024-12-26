@@ -72,7 +72,7 @@ func ProcessMessageWrapper(db *db.SimpleDatabase, producers *KafkaProducers) fun
 		if db.Exists(uniqueKey) {
 			log.Printf("Notification %s is a duplicate\n", uniqueKey)
 			errorString := fmt.Sprintf("Notification %s is a duplicate", uniqueKey)
-			return errors.HandleError(context, producers.ErrorProducer, errorString)
+			return errors.HandleError(context, event, producers.ErrorProducer, errorString)
 
 		}
 		db.Add(uniqueKey)
