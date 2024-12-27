@@ -6,6 +6,7 @@ require (
 	github.com/caarlos0/env/v6 v6.10.1
 	github.com/gin-gonic/gin v1.10.0
 	github.com/tankcdr/ppe-kafka-go/db v0.0.0
+	github.com/tankcdr/ppe-kafka-go/error v0.0.0
 	github.com/tankcdr/ppe-kafka-go/events v0.0.0
 	github.com/tankcdr/ppe-kafka-go/kafka v0.0.0
 )
@@ -43,8 +44,9 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/tankcdr/ppe-kafka-go/kafka => ../kafka
-
-replace github.com/tankcdr/ppe-kafka-go/events => ../events
-
-replace github.com/tankcdr/ppe-kafka-go/db => ../db
+replace (
+	github.com/tankcdr/ppe-kafka-go/db => ../db
+	github.com/tankcdr/ppe-kafka-go/error => ../error
+	github.com/tankcdr/ppe-kafka-go/events => ../events
+	github.com/tankcdr/ppe-kafka-go/kafka => ../kafka
+)

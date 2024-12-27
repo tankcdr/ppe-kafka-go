@@ -52,7 +52,7 @@ func ProcessMessageWrapper(db *db.SimpleDatabase, producers *KafkaProducers) fun
 			return err
 		}
 		// Check if the event is an Notification event
-		if event.EventName != events.OrderStatus[events.OrderConfirmed] {
+		if event.EventName != events.OrderStatus[events.NotificationEvent] {
 			log.Printf("Not of type Notification. Instead event type is %s.\n", event.EventName)
 			return nil
 		}

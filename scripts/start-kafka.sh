@@ -17,13 +17,22 @@ if [ -z "$COMPOSE_FILE" ] || [ -z "$PORT" ]; then
   exit 1
 fi
 
+# Parse arguments
+FORCE_RECREATE=""
+for arg in "$@"; do
+  if [ "$arg" == "--rebuild" ]; then
+    FORCE_RECREATE="--build --force-recreate"
+    break
+  fi
+done
+
 # Change to the root directory containing docker-compose.yml
 ROOT_DIR=$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..
 cd "$ROOT_DIR" || { echo "Failed to change directory to root"; exit 1; }
 
 # Start Kafka and Zookeeper using Docker Compose
 echo "Starting Kafka and Zookeeper using Docker Compose..."
-docker compose -f $COMPOSE_FILE up -d
+docker compose   -f $COMPOSE_FILE up $FORCE_RECREATE -d
 
 # Check if the services are running
 if [ $? -eq 0 ]; then

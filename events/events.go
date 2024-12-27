@@ -14,7 +14,7 @@ const (
 	OrderReceived EventType = iota
 	OrderConfirmed
 	OrderPickedPacked
-	Notificatifcation
+	NotificationEvent
 	Error
 )
 
@@ -22,7 +22,7 @@ var OrderStatus = map[EventType]string{
 	OrderReceived:     "OrderReceived",
 	OrderConfirmed:    "OrderConfirmed",
 	OrderPickedPacked: "OrderPickedPacked",
-	Notificatifcation: "Notificatifcation",
+	NotificationEvent: "Notification",
 	Error:             "Error",
 }
 
@@ -146,5 +146,5 @@ func (n *Notification) ToEvent() (*Event, error) {
 		return nil, err
 	}
 
-	return NewEvent(Notificatifcation, string(nJSON)), nil
+	return NewEvent(NotificationEvent, string(nJSON)), nil
 }

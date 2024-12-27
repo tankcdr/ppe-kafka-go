@@ -64,7 +64,7 @@ func ProcessMessageWrapper(db *db.SimpleDatabase, producers *KafkaProducers) fun
 		// using an in memory store, but would want a real db for this
 		if db.Exists(order.OrderID) {
 			errorString := fmt.Sprintf("Order %s is a duplicate", order.OrderID)
-			return errors.HandleError(context, event, errorString)
+			return errors.HandleError(context, event, producers.ErrorProducer, errorString)
 		}
 		db.Add(order.OrderID)
 		log.Printf("Order %s is unique\n", order.OrderID)
@@ -73,7 +73,7 @@ func ProcessMessageWrapper(db *db.SimpleDatabase, producers *KafkaProducers) fun
 		confirmedEvent := events.NewEvent(events.OrderConfirmed, event.EventBody)
 		if err := producers.OrderConfirmedProducer.Publish(context, confirmedEvent); err != nil {
 			errorString := fmt.Sprintf("Failed to produce OrderConfirmed event: %v\n", err)
-			return errors.HandleError(context, event, errorString)
+			return errors.HandleError(context, event, producers.ErrorProducer, errorString)
 		}
 		log.Printf("Published OrderConfirmed event: %v\n", confirmedEvent)
 
