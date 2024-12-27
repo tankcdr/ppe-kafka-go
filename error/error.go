@@ -19,6 +19,7 @@ func HandleError(ctx context.Context, event *events.Event, producer *kafka.Kafka
 	// Update the event with the error message
 	errorString := fmt.Sprintf("%s: %v", customMessage, err)
 	event.ErrorMessage = &errorString
+	event.EventName = events.OrderStatus[events.Error]
 
 	// Publish an error event to Kafka
 	if publishErr := producer.Publish(ctx, event); publishErr != nil {

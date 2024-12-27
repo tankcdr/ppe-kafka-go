@@ -22,6 +22,15 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9093:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - default
+
   order-service:
     build:
       context: . # project root
@@ -92,3 +101,22 @@ services:
       KAFKA_BROKER: kafka:9092
       KAFKA_ERROR: order-error
       KAFKA_ORDER_NOTIFICATION: order-notification
+
+  metrics-error-consumer:
+    image: metrics-error-consumer
+    build:
+      context: . # project root
+      dockerfile: metrics/error-counter/Dockerfile
+    depends_on:
+      - kafka
+    ports:
+      - 9085:8080 # Map external port 9080 to internal port 8080
+    environment:
+      KAFKA_BROKER: kafka:9092
+      KAFKA_ERROR: order-error
+    networks:
+      - default
+
+networks:
+  default:
+    driver: bridge
