@@ -1,2 +1,3 @@
 .env
 .container_state
+.DS_Store
