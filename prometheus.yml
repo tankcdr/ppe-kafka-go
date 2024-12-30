@@ -7,4 +7,4 @@ scrape_configs:
       - targets: ["metrics-error-consumer:8080"]
   - job_name: "order-time-to-ship-consumer"
     static_configs:
-      - targets: ["order-time:8080"]
+      - targets: ["metrics-order-time:8080"]
