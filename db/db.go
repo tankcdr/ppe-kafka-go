@@ -1,27 +1,19 @@
 package db
 
-import "sync"
-
 type SimpleDatabase struct {
-	mu   sync.RWMutex
-	data map[string]struct{}
+	store *SimpleInMemoryDatabase[string, struct{}]
 }
 
 func NewSimpleDatabase() *SimpleDatabase {
 	return &SimpleDatabase{
-		data: make(map[string]struct{}),
+		store: NewSimpleInMemoryDatabase[string, struct{}](),
 	}
 }
 
 func (db *SimpleDatabase) Add(value string) {
-	db.mu.Lock()
-	defer db.mu.Unlock()
-	db.data[value] = struct{}{}
+	db.store.Add(value, struct{}{})
 }
 
 func (db *SimpleDatabase) Exists(value string) bool {
-	db.mu.RLock()
-	defer db.mu.RUnlock()
-	_, exists := db.data[value]
-	return exists
+	return db.store.Exists(value)
 }
